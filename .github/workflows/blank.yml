@@ -37,4 +37,4 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             docker pull zemfus/barbot:latest
-            docker-compose -f ~/bot/docker-compose.yml up --no-deps --build -d bot
+            docker-compose -f ~/bot/docker-compose.yaml up --no-deps --build -d bot
