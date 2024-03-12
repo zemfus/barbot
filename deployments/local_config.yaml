@@ -1,5 +1,5 @@
 telegram:
-  token: "7168888189:AAE4tHLkY-Uzf3LYL2N9lK36k_LGJVlOZW8"
+  token: "6920173471:AAGuHIpVwkI9v9Si4vJ9BjT87nOoIUuNeNg"
   debug: true
 database:
   host: "postgres"
