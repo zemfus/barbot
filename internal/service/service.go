@@ -1,8 +1,8 @@
 package service
 
 import (
-	"bot21/internal/bots"
-	repoP "bot21/internal/repository/postgres"
+	"barbot/internal/bots"
+	repoP "barbot/internal/repository/postgres"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"math/rand"

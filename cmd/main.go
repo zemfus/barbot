@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bot21/internal/app"
+	"barbot/internal/app"
 	"log/slog"
 )
 

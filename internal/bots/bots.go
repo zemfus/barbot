@@ -1,7 +1,7 @@
 package bots
 
 import (
-	"bot21/internal/config"
+	"barbot/internal/config"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

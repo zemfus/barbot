@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"bot21/internal/repository/gen/bot/public/table"
+	"barbot/internal/repository/gen/bot/public/table"
 	"database/sql"
 	_ "github.com/lib/pq"
 )

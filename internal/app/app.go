@@ -1,11 +1,11 @@
 package app
 
 import (
-	bots2 "bot21/internal/bots"
-	"bot21/internal/config"
-	"bot21/internal/postgres"
-	repoP "bot21/internal/repository/postgres"
-	"bot21/internal/service"
+	bots2 "barbot/internal/bots"
+	"barbot/internal/config"
+	"barbot/internal/postgres"
+	repoP "barbot/internal/repository/postgres"
+	"barbot/internal/service"
 	"errors"
 	"fmt"
 	"os"

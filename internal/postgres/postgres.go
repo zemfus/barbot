@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"bot21/internal/config"
+	"barbot/internal/config"
 	"database/sql"
 	"fmt"
 )
