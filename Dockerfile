@@ -10,9 +10,9 @@ RUN go mod download -x
 FROM env as build
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bot main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bot cmd/main.go
 
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /build/bot /bin/bot
-ENTRYPOINT ["/bin/bot"]
+ENTRYPOINT ["/bin/bot", "conf.yaml"]
