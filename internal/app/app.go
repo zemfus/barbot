@@ -8,6 +8,7 @@ import (
 	"barbot/internal/service"
 	"errors"
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,6 +28,8 @@ func Run() error {
 	if err != nil {
 		return err
 	}
+	m := tgbotapi.NewMessage(cfg.App.SuperUserID, "Я ожил /new /count")
+	bots.Bot.Send(m)
 
 	db, err := postgres.New(cfg.Database)
 	if err != nil {

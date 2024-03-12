@@ -58,7 +58,7 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 
 	if update.Message != nil && update.Message.Command() == "start" {
 		s.needRegistration(update)
-		m := tgbotapi.NewMessage(update.Message.From.ID, "Вы зарегестрированы, ожидайте номер команды")
+		m := tgbotapi.NewMessage(update.Message.From.ID, "Поздравляю, ты в игре, жди дальнейших указаний!")
 		s.bots.Bot.Send(m)
 		return
 	}
@@ -67,9 +67,16 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		users := s.db.GetUsers()
 		teamAssignments := distributeTeams(users)
 		for id, team := range teamAssignments {
-			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда номер: %d", team))
+			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда утконосов номер: %d", team))
 			s.bots.Bot.Send(m1)
 		}
+		return
+	}
+
+	if update.Message != nil && update.Message.Command() == "count" && s.AdminId == update.SentFrom().ID {
+		users := s.db.GetUsers()
+		m1 := tgbotapi.NewMessage(s.AdminId, fmt.Sprintf("Колличество: %d", len(users)))
+		s.bots.Bot.Send(m1)
 		return
 	}
 
