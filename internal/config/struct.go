@@ -18,8 +18,8 @@ type DatabaseConfig struct {
 
 // AppConfig represents the application-related configuration
 type AppConfig struct {
-	LogLevel    string `yaml:"logLevel"`
-	SuperUserID int64  `yaml:"superUserID"`
+	LogLevel    string  `yaml:"logLevel"`
+	SuperUserID []int64 `yaml:"superUserID"`
 }
 
 // Configuration is the main configuration structure that includes all other config structs

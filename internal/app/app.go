@@ -28,12 +28,20 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	m := tgbotapi.NewMessage(cfg.App.SuperUserID, `
+	m := tgbotapi.NewMessage(cfg.App.SuperUserID[0], `
 Я ожил!!!
 /new - распределить
 /count - посчитать людей 
  Ничего не отвечай и не нажимай / start
 `)
+	bots.Bot.Send(m)
+	m = tgbotapi.NewMessage(cfg.App.SuperUserID[1], `
+Я ожил!!!
+/new - распределить
+/count - посчитать людей 
+ Ничего не отвечай и не нажимай / start
+`)
+
 	bots.Bot.Send(m)
 
 	db, err := postgres.New(cfg.Database)

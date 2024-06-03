@@ -9,5 +9,7 @@ database:
   dbName: "bot"
   migrationsPath: "migrations/"
 app:
-  superUserID: 458912081
+  superUserID:
+    - 458912081
+    - 5250272087
 
