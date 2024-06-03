@@ -67,7 +67,7 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		users := s.db.GetUsers()
 		teamAssignments := distributeTeams(users)
 		for id, team := range teamAssignments {
-			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда аксолотлей номер: %d", team))
+			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда аксолотлей номер: %d, скороее сделай кринжовую фотку со своей командой и кидай мне❤️", team))
 			s.bots.Bot.Send(m1)
 		}
 		return
@@ -78,6 +78,12 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		m1 := tgbotapi.NewMessage(update.SentFrom().ID, fmt.Sprintf("Колличество: %d", len(users)))
 		s.bots.Bot.Send(m1)
 		return
+	}
+
+	if update.Message != nil && update.Message.Photo != nil {
+		photo := update.Message.Photo[len(update.Message.Photo)-1]
+		p := tgbotapi.NewPhoto(7118228041, tgbotapi.FileID(photo.FileID))
+		s.bots.Bot.Send(p)
 	}
 
 }
