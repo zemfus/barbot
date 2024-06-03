@@ -63,7 +63,7 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		return
 	}
 
-	if update.Message != nil && update.Message.Command() == "new" && s.AdminId[1] == update.SentFrom().ID && s.AdminId[0] == update.SentFrom().ID {
+	if update.Message != nil && update.Message.Command() == "new" && (s.AdminId[1] == update.SentFrom().ID || s.AdminId[0] == update.SentFrom().ID) {
 		users := s.db.GetUsers()
 		teamAssignments := distributeTeams(users)
 		for id, team := range teamAssignments {
@@ -73,11 +73,9 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		return
 	}
 
-	if update.Message != nil && update.Message.Command() == "count" && s.AdminId[1] == update.SentFrom().ID && s.AdminId[0] == update.SentFrom().ID {
+	if update.Message != nil && update.Message.Command() == "count" && (s.AdminId[1] == update.SentFrom().ID || s.AdminId[0] == update.SentFrom().ID) {
 		users := s.db.GetUsers()
-		m1 := tgbotapi.NewMessage(s.AdminId[1], fmt.Sprintf("Колличество: %d", len(users)))
-		s.bots.Bot.Send(m1)
-		m1 = tgbotapi.NewMessage(s.AdminId[0], fmt.Sprintf("Колличество: %d", len(users)))
+		m1 := tgbotapi.NewMessage(update.SentFrom().ID, fmt.Sprintf("Колличество: %d", len(users)))
 		s.bots.Bot.Send(m1)
 		return
 	}
