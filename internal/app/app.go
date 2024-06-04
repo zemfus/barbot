@@ -32,14 +32,14 @@ func Run() error {
 Я ожил!!!
 /new - распределить
 /count - посчитать людей 
- Ничего не отвечай и не нажимай / start
+ Принять участие в распределении - /start
 `)
 	bots.Bot.Send(m)
 	m = tgbotapi.NewMessage(cfg.App.SuperUserID[1], `
 Я ожил!!!
 /new - распределить
 /count - посчитать людей 
- Ничего не отвечай и не нажимай / start
+ Принять участие в распределении - /start
 `)
 
 	bots.Bot.Send(m)
