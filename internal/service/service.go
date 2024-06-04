@@ -67,7 +67,7 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		users := s.db.GetUsers()
 		teamAssignments := distributeTeams(users)
 		for id, team := range teamAssignments {
-			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда Тихоходок номер: %d ❤️️", team))
+			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда Аксолотлей номер: %d ❤️️", team))
 			s.bots.Bot.Send(m1)
 		}
 		return
