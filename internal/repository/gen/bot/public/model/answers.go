@@ -7,8 +7,8 @@
 
 package model
 
-type Users struct {
-	UserID int64 `sql:"primary_key"`
-	Login  *string
-	State  *int32
+type Answers struct {
+	UserID           *int64
+	QuestionID       *int32
+	UserIDRespondent *int64
 }

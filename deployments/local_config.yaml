@@ -1,6 +1,7 @@
 telegram:
-  token: "6920173471:AAGuHIpVwkI9v9Si4vJ9BjT87nOoIUuNeNg"
-#  token: "7330713969:AAFjCjXH9Lkt24pAD4fmNkJItp0vaZ6zzz8"
+  #  token: "6920173471:AAGuHIpVwkI9v9Si4vJ9BjT87nOoIUuNeNg"
+  token: "6995408420:AAG3YI3xh1n7eyOABk7mXirOF32JzEzNY2w"
+  #  token: "7330713969:AAFjCjXH9Lkt24pAD4fmNkJItp0vaZ6zzz8"
   debug: true
 database:
   host: "postgres"
@@ -11,7 +12,8 @@ database:
   migrationsPath: "migrations/"
 app:
   superUserID:
-    - 458912081
-#    - 1347179916
+    #    - 458912081
+    #    - 1347179916
+    - 1071943210
     - 5250272087
 
