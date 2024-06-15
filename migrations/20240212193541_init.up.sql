@@ -1,28 +1,25 @@
 begin;
 
-create table users
+create table guests
 (
-    user_id bigint primary key,
+    user_id bigint,
     login   text,
-    state   int
+    name text,
+    state int,
+    level int,
+    participation boolean,
+    check_in boolean,
+    img_id bigint,
 );
 
-create table questions
+create table cocktails
 (
-    user_id     bigint,
-    question_id int,
-    answer      boolean
+    id int,
+    name text,
+    composition text,
+    availability boolean,
+    alcohol boolean,
+    level int
 );
-
-create index questions_user_id_idx on questions (user_id);
-
-create table answers
-(
-    user_id            bigint,
-    question_id        int,
-    user_id_respondent bigint
-);
-
-create index answers_user_id_idx on answers (user_id);
 
 commit;

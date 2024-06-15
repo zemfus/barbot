@@ -34,7 +34,7 @@ func Run() error {
 	}
 	postgresRepo := repoP.New(db)
 
-	s := service.NewService(postgresRepo, bots, cfg.App.SuperUserID)
+	s := service.NewService(postgresRepo, bots, cfg.App.AdminID, cfg.App.BarmenID)
 
 	go func() { s.Run() }()
 

@@ -1,13 +1,9 @@
 begin;
 
-drop table users;
+drop table peers;
 
-drop table questions;
+drop table available_codes;
 
-drop index questions_user_id_idx;
-
-drop table answers;
-
-drop index answers_user_id_idx;
+drop table responses;
 
 commit;
