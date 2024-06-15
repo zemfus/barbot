@@ -8,7 +8,7 @@
 package model
 
 type Guests struct {
-	UserID        int64 `sql:"primary_key"`
+	UserID        *int64
 	Login         *string
 	Name          *string
 	State         *int32

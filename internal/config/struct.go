@@ -21,6 +21,7 @@ type AppConfig struct {
 	LogLevel string `yaml:"logLevel"`
 	AdminID  int64  `yaml:"adminID"`
 	BarmenID int64  `yaml:"barmenID"`
+	ChatID   int64  `yaml:"chatID"`
 }
 
 // Configuration is the main configuration structure that includes all other config structs

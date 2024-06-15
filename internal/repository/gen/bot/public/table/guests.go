@@ -72,7 +72,7 @@ func newGuestsTableImpl(schemaName, tableName, alias string) guestsTable {
 		ParticipationColumn = postgres.BoolColumn("participation")
 		CheckInColumn       = postgres.BoolColumn("check_in")
 		allColumns          = postgres.ColumnList{UserIDColumn, LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn}
-		mutableColumns      = postgres.ColumnList{LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn}
+		mutableColumns      = postgres.ColumnList{UserIDColumn, LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn}
 	)
 
 	return guestsTable{

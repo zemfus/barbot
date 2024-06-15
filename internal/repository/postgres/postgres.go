@@ -4,6 +4,7 @@ import (
 	"barbot/internal/repository/gen/bot/public/model"
 	"barbot/internal/repository/gen/bot/public/table"
 	"database/sql"
+	"github.com/go-jet/jet/v2/postgres"
 	_ "github.com/lib/pq"
 )
 
@@ -83,12 +84,23 @@ func New(db *sql.DB) *RepositoryPostgres {
 
 // --------------------------------------------------------------------------------
 
+const (
+	GuestNone = iota
+	GuestAlcohol
+	GuestMusic
+	GuestFood
+)
+
 func (r *RepositoryPostgres) NewGuest(login, name string, level int) bool {
-	stmt := table.Invitations.INSERT(
-		table.Invitations.Login,
-		table.Invitations.Name,
-		table.Invitations.Level,
-	).VALUES(login, name, level).ON_CONFLICT().DO_NOTHING()
+	stmt := table.Guests.INSERT(
+		table.Guests.UserID,
+		table.Guests.Login,
+		table.Guests.Name,
+		table.Guests.State,
+		table.Guests.Level,
+		table.Guests.Participation,
+		table.Guests.CheckIn,
+	).VALUES(0, login, name, GuestNone, level, false, false).ON_CONFLICT().DO_NOTHING()
 
 	_, err := stmt.Exec(r.DB)
 	if err != nil {
@@ -97,26 +109,76 @@ func (r *RepositoryPostgres) NewGuest(login, name string, level int) bool {
 	return true
 }
 
-func (r *RepositoryPostgres) GetInvitations() ([]model.Invitations, error) {
-	stmt := table.Invitations.SELECT(
-		table.Invitations.AllColumns,
+func (r *RepositoryPostgres) GetGuests() ([]model.Guests, error) {
+	stmt := table.Guests.SELECT(
+		table.Guests.AllColumns,
 	)
-	// todo непонятно че здесь передавать
-	var allInvitation []model.Invitations
-	err := stmt.Query(r.DB, &allInvitation)
+	var guests []model.Guests
+	err := stmt.Query(r.DB, &guests)
 	if err != nil {
 		return nil, err
 	}
-	return allInvitation, nil
+	return guests, nil
 }
 
-func (r *RepositoryPostgres) CheckGuest(login string) (string, error) {
-	stmt := table.Invitations.SELECT(
-		table.Invitations.Name)
-	var ans []string
-	err := stmt.Query(r.DB, ans)
-	if err != nil || len(ans) == 0 {
-		return "", err
+func (r *RepositoryPostgres) CheckGuest(login string) (model.Guests, error) {
+	stmt := table.Guests.SELECT(
+		table.Guests.AllColumns).WHERE(table.Guests.Login.EQ(postgres.String(login)))
+	var ans []model.Guests
+	err := stmt.Query(r.DB, &ans)
+	if err != nil || len(ans) != 1 {
+		return model.Guests{}, err
 	}
 	return ans[0], err
+}
+
+func (r *RepositoryPostgres) SetID(login string, user_id int64) error {
+	stmt := table.Guests.UPDATE(table.Guests.UserID).SET(user_id).
+		WHERE(table.Guests.Login.EQ(postgres.String(login)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RepositoryPostgres) SetParticipation(userId int64, ans bool) error {
+	stmt := table.Guests.UPDATE(table.Guests.Participation).SET(ans).
+		WHERE(table.Guests.UserID.EQ(postgres.Int64(userId)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RepositoryPostgres) SetState(userId int64, state int) error {
+	stmt := table.Guests.UPDATE(table.Guests.State).SET(state).
+		WHERE(table.Guests.UserID.EQ(postgres.Int64(userId)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RepositoryPostgres) GetState(userId int64) (int, error) {
+	stmt := table.Guests.SELECT(
+		table.Guests.AllColumns).WHERE(table.Guests.UserID.EQ(postgres.Int64(userId)))
+	var ans []model.Guests
+	err := stmt.Query(r.DB, &ans)
+	if err != nil || len(ans) != 1 {
+		return -1, err
+	}
+	return int(*ans[0].State), err
+}
+
+func (r *RepositoryPostgres) DropGuest(login string) error {
+	stmt := table.Guests.
+		DELETE().WHERE(table.Guests.Login.EQ(postgres.String(login)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return err
+	}
+	return nil
 }

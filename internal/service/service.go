@@ -13,6 +13,7 @@ type Service struct {
 	bots     *bots.Bots
 	AdminID  int64
 	BarmenID int64
+	ChatID   int64
 }
 
 func NewService(
@@ -20,8 +21,9 @@ func NewService(
 	bots *bots.Bots,
 	adminID int64,
 	barmenID int64,
+	chatID int64,
 ) *Service {
-	return &Service{db: db, bots: bots, AdminID: adminID, BarmenID: barmenID}
+	return &Service{db: db, bots: bots, AdminID: adminID, BarmenID: barmenID, ChatID: chatID}
 }
 
 func (s *Service) Run() {
@@ -57,6 +59,9 @@ func (s *Service) Run() {
 }
 
 func (s *Service) processUpdate(update tgbotapi.Update) {
+	if update.FromChat().ID == s.ChatID {
+		return
+	}
 	switch update.SentFrom().ID {
 	case s.AdminID:
 		s.handleAdmin(update)

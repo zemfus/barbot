@@ -1,5 +1,6 @@
 telegram:
-  token: "7267347931:AAGYkgQ5lZq-5U4fTDRNtLzoZ9N0Ab_xrQs"
+#  token: "7267347931:AAGYkgQ5lZq-5U4fTDRNtLzoZ9N0Ab_xrQs" # test
+  token: "7340728779:AAEgZPhXmxEvA6bUn6ytMzUezRsc507JaDU" # prod
   debug: true
 database:
 #  host: "localhost"
@@ -12,4 +13,5 @@ database:
 app:
   adminID: 1071943210
   barmenID: 2120829752
+  chatID: -1002169957134
 

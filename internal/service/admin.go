@@ -11,6 +11,7 @@ import (
 const (
 	None = iota
 	NewGuest
+	DelGuest
 )
 
 var state int = None
@@ -27,13 +28,19 @@ func (s *Service) handleAdmin(update tgbotapi.Update) {
 	command := update.Message.Command()
 
 	if command == "start" {
-		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Команды:\n/new_guest - добавить гостя\n/invitations - все приглашения"))
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Команды:\n/newGuest - добавить гостя\n/guests - все приглашения\n/delGuest - удалить гостя по логину"))
 		return
 	}
 
-	if command == "new_guest" {
+	if command == "newGuest" {
 		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "введи через пробел: логин (без @), имя, уровень (0 - без алко, 1 - алко, 2 - спешл)"))
 		state = NewGuest
+		return
+	}
+
+	if command == "delGuest" {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "введи логин (без @)"))
+		state = DelGuest
 		return
 	}
 
@@ -48,6 +55,7 @@ func (s *Service) handleAdmin(update tgbotapi.Update) {
 			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Что-то не так с уровнем"))
 			return
 		}
+
 		if s.db.NewGuest(data[0], data[1], level) {
 			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Добавлено"))
 		} else {
@@ -56,18 +64,39 @@ func (s *Service) handleAdmin(update tgbotapi.Update) {
 		return
 	}
 
-	if command == "invitations" {
-		allInv, err := s.db.GetInvitations()
+	if command == "guests" {
+		guests, err := s.db.GetGuests()
 		if err != nil {
 			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с запросом"))
 			return
 		}
-		str := ""
-		for i, v := range allInv {
-			str += strconv.Itoa(i) + ") " + pointy.PointerValue(v.Login, "") + " " + pointy.PointerValue(v.Name, "") + " " + fmt.Sprint(pointy.PointerValue(v.Level, 0)) + "\n"
+		str := "Guests:\n"
+		for i, g := range guests {
+			str += fmt.Sprint(
+				strconv.Itoa(i+1), ") ",
+				pointy.PointerValue(g.UserID, 0), " ",
+				pointy.PointerValue(g.Login, ""), " ",
+				pointy.PointerValue(g.Name, ""), " ",
+				pointy.PointerValue(g.State, 0), " ",
+				pointy.PointerValue(g.Level, 0), " ",
+				pointy.PointerValue(g.Participation, false), " ",
+				pointy.PointerValue(g.CheckIn, false), "\n",
+			)
 		}
 		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, str))
 		return
 	}
 
+	if state == DelGuest {
+		state = None
+		err := s.db.DropGuest(update.Message.Text)
+		if err != nil {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Что-то пошло не так в удалении"))
+			return
+		}
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Без ошибок прошло удаление"))
+		return
+	}
+
+	s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Я не знаю как на это реагировать(\nКоманды:\n/newGuest - добавить гостя\n/guests - все приглашения\n/delGuest - удалить гостя по логину"))
 }

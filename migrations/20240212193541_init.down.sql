@@ -1,9 +1,7 @@
 begin;
 
-drop table peers;
+drop table guests;
 
-drop table available_codes;
-
-drop table responses;
+drop table cocktails;
 
 commit;
