@@ -49,6 +49,7 @@ func (s *Service) handleAdmin(update tgbotapi.Update) {
 		data := strings.Fields(update.Message.Text)
 		if len(data) != 3 {
 			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Неверное количество"))
+			return
 		}
 		level, err := strconv.Atoi(data[2])
 		if err != nil || (level < 0 || level > 2) {
