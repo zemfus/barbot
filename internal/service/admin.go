@@ -150,7 +150,9 @@ func (s *Service) handleAdmin(update tgbotapi.Update) {
 			str += strconv.Itoa(int(pointy.PointerValue(g.ID, 0))) + ") " +
 				pointy.PointerValue(g.Description, "") + " " + fmt.Sprint(*g.UserID) + "\n"
 		}
-		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, str))
+		msg := tgbotapi.NewMessage(s.AdminID, str)
+		msg.DisableWebPagePreview = true
+		s.bots.Bot.Send(msg)
 		return
 	}
 

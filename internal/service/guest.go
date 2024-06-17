@@ -223,6 +223,7 @@ func (s *Service) sendWishlist(id int64) {
 			tgbotapi.NewInlineKeyboardButtonData("Вернуться обратно", "return")))
 	msg := tgbotapi.NewMessage(id, str)
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+	msg.DisableWebPagePreview = true
 	s.bots.Bot.Send(msg)
 }
 
