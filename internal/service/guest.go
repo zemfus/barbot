@@ -2,13 +2,21 @@ package service
 
 import (
 	"barbot/internal/repository/postgres"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.openly.dev/pointy"
+	"strconv"
+	"strings"
 )
 
 func (s *Service) handleGuest(update tgbotapi.Update) {
 	if update.CallbackQuery != nil {
+		if update.CallbackQuery.Data == "_" {
+			return
+		}
 		s.bots.Bot.Send(tgbotapi.NewDeleteMessage(update.SentFrom().ID, update.CallbackQuery.Message.MessageID))
-		if update.CallbackQuery.Data == "approveInvite" {
+
+		if update.CallbackQuery.Data == "approveInvite_" {
 			err := s.db.SetParticipation(update.SentFrom().ID, true)
 			if err != nil {
 				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с подтверждением участия "+update.SentFrom().UserName))
@@ -21,8 +29,7 @@ func (s *Service) handleGuest(update tgbotapi.Update) {
 			s.bots.Bot.Send(permission)
 		}
 
-		if update.CallbackQuery.Data == "refuseInvite" {
-			s.bots.Bot.Send(tgbotapi.NewDeleteMessage(update.SentFrom().ID, update.CallbackQuery.Message.MessageID))
+		if update.CallbackQuery.Data == "refuseInvite_" {
 			err := s.db.SetParticipation(update.SentFrom().ID, true)
 			if err != nil {
 				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с подтверждением участия "+update.SentFrom().UserName))
@@ -35,23 +42,59 @@ func (s *Service) handleGuest(update tgbotapi.Update) {
 			s.bots.Bot.Send(permission)
 		}
 
-		if update.CallbackQuery.Data == "alcohol" {
+		if update.CallbackQuery.Data == "alcohol_" {
 			s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Напиши пожелания по алкоголю:"))
 			s.db.SetState(update.SentFrom().ID, postgres.GuestAlcohol)
 		}
 
-		if update.CallbackQuery.Data == "music" {
+		if update.CallbackQuery.Data == "music_" {
 			s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Напиши пожелания по музыке:"))
 			s.db.SetState(update.SentFrom().ID, postgres.GuestMusic)
 		}
 
-		if update.CallbackQuery.Data == "food" {
+		if update.CallbackQuery.Data == "food_" {
 			s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Напиши пожелания по еде:"))
 			s.db.SetState(update.SentFrom().ID, postgres.GuestFood)
 		}
 
-		if update.CallbackQuery.Data == "invite" {
+		if update.CallbackQuery.Data == "invite_" {
 			s.sendInvite(update.SentFrom().ID)
+		}
+
+		if update.CallbackQuery.Data == "return" {
+			s.sendInfo(update.SentFrom().ID)
+		}
+
+		if strings.HasPrefix(update.CallbackQuery.Data, "cancel") {
+			idx, _ := strconv.Atoi(update.CallbackQuery.Data[7:])
+			_, err := s.db.SetGiftUserID(int32(idx), 0)
+			if err != nil {
+				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с отменой подарка "+update.SentFrom().UserName))
+				return
+			}
+			s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "ГАЛЯ У НАС ОТМЕНА"))
+			s.sendWishlist(update.SentFrom().ID)
+		}
+
+		if strings.HasPrefix(update.CallbackQuery.Data, "add") {
+			idx, _ := strconv.Atoi(update.CallbackQuery.Data[4:])
+			ret, err := s.db.SetGiftUserID(int32(idx), update.SentFrom().ID)
+			if err != nil {
+				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с добавлением подарка "+update.SentFrom().UserName))
+				return
+			}
+			if !ret {
+				s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Уже ктото взял("))
+			} else {
+				s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Так и запишем ✍️"))
+			}
+			s.bots.Bot.Send(tgbotapi.NewDeleteMessage(update.SentFrom().ID, update.CallbackQuery.Message.MessageID))
+			s.sendWishlist(update.SentFrom().ID)
+		}
+
+		if update.CallbackQuery.Data == "wishlist" {
+			s.bots.Bot.Send(tgbotapi.NewDeleteMessage(update.SentFrom().ID, update.CallbackQuery.Message.MessageID))
+			s.sendWishlist(update.SentFrom().ID)
 		}
 
 		return
@@ -117,8 +160,8 @@ func (s *Service) sendInvite(id int64) {
 	msg := tgbotapi.NewMessage(id, "Подтверди свое участие:")
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Подтверждаю", "approveInvite"),
-			tgbotapi.NewInlineKeyboardButtonData("Не смогу(", "refuseInvite"),
+			tgbotapi.NewInlineKeyboardButtonData("Подтверждаю", "approveInvite_"),
+			tgbotapi.NewInlineKeyboardButtonData("Не смогу(", "refuseInvite_"),
 		),
 	)
 	msg.ReplyMarkup = inlineKeyboard
@@ -128,12 +171,58 @@ func (s *Service) sendInvite(id int64) {
 func (s *Service) sendInfo(id int64) {
 	msg := tgbotapi.NewMessage(id, "Можешь выбрать либого питомца, которого ты захочешь:")
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Пожелания по алкоголю", "alcohol")),
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Предпочтения по музыке", "music")),
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Предпочтения по еде", "food")),
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Изменить решение", "invite")),
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Пожелания по алкоголю", "alcohol_")),
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Предпочтения по музыке", "music_")),
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Предпочтения по еде", "food_")),
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Wishlist", "wishlist")),
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Изменить решение", "invite_")),
 	)
 	msg.ReplyMarkup = inlineKeyboard
+	s.bots.Bot.Send(msg)
+}
+
+func (s *Service) sendWishlist(id int64) {
+	gifts, err := s.db.GetWishlist()
+	if err != nil {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Ошибка"+err.Error()))
+		return
+	}
+
+	var rows [][]tgbotapi.InlineKeyboardButton
+	str := "Wishlist:\n\n"
+
+	for i := 1; i <= len(gifts); i++ {
+		var button tgbotapi.InlineKeyboardButton
+		switch pointy.PointerValue(gifts[i-1].UserID, 0) {
+		case id:
+			button = tgbotapi.NewInlineKeyboardButtonData(fmt.Sprint("✅", i, "✅"), fmt.Sprint("cancel ", i))
+			str += "🟢 "
+		case 0:
+			button = tgbotapi.NewInlineKeyboardButtonData(fmt.Sprint(i), fmt.Sprint("add ", i))
+			str += "⚪️ "
+		default:
+			button = tgbotapi.NewInlineKeyboardButtonData(fmt.Sprint("❌", i, "❌"), "_")
+			str += "🔴 "
+		}
+		// Создание кнопок и добавление их в строки
+		// Добавление новой строки
+		// Добавление кнопки в последнюю строку
+		str += strconv.Itoa(int(pointy.PointerValue(gifts[i-1].ID, 0))) + ") "
+		str += pointy.PointerValue(gifts[i-1].Description, "") + "\n"
+
+		if i%5 == 1 {
+			rows = append(rows, tgbotapi.NewInlineKeyboardRow(button))
+		} else {
+			rows[len(rows)-1] = append(rows[len(rows)-1], button)
+		}
+
+	}
+	str += "\n🟢 -- выбранные подарки (при нажатии на ✅ можно отменить бронь)\n⚪️ -- доступные для выбора\n🔴 -- забронированые"
+	rows = append(rows,
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Вернуться обратно", "return")))
+	msg := tgbotapi.NewMessage(id, str)
+	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 	s.bots.Bot.Send(msg)
 }
 

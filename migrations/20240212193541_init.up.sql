@@ -21,4 +21,11 @@ create table cocktails
     level int
 );
 
+create table wishlist
+(
+    id int,
+    description text,
+    user_id bigint
+);
+
 commit;

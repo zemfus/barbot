@@ -12,6 +12,8 @@ const (
 	None = iota
 	NewGuest
 	DelGuest
+	NewGift
+	DelGift
 )
 
 var state int = None
@@ -97,6 +99,72 @@ func (s *Service) handleAdmin(update tgbotapi.Update) {
 		}
 		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Без ошибок прошло удаление"))
 		return
+	}
+
+	if command == "newGift" {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Напиши что ты хочешь"))
+		state = NewGift
+		return
+	}
+
+	if state == NewGift {
+		state = None
+		if s.db.NewGift(update.Message.Text) {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Добавили"))
+		} else {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Косяк с добавлением"))
+		}
+		return
+	}
+
+	if command == "delGift" {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Введи номер"))
+		state = DelGift
+		return
+	}
+
+	if state == DelGift {
+		state = None
+		id, err := strconv.Atoi(update.Message.Text)
+		if err != nil {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Это не число"))
+			return
+		}
+		err = s.db.DropGift(int32(id))
+		if err != nil {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Ошибка"+err.Error()))
+		} else {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Удалили"))
+		}
+		return
+	}
+
+	if command == "wishlist" {
+		str := "Wish list:\n\n0) Деньги)\n"
+		gifts, err := s.db.GetWishlist()
+		if err != nil {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Ошибка"+err.Error()))
+			return
+		}
+		for _, g := range gifts {
+			str += strconv.Itoa(int(pointy.PointerValue(g.ID, 0))) + ") " +
+				pointy.PointerValue(g.Description, "") + " " + fmt.Sprint(*g.UserID) + "\n"
+		}
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, str))
+		return
+	}
+
+	if command == "refresh" {
+		guests, err := s.db.GetGuests()
+		if err != nil {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Ошибка"+err.Error()))
+			return
+		}
+		for _, g := range guests {
+			if pointy.PointerValue(g.UserID, 0) != 0 {
+				s.sendInfo(*g.UserID)
+			}
+		}
 	}
 
 	s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Я не знаю как на это реагировать(\nКоманды:\n/newGuest - добавить гостя\n/guests - все приглашения\n/delGuest - удалить гостя по логину"))

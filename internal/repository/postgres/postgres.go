@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"github.com/go-jet/jet/v2/postgres"
 	_ "github.com/lib/pq"
+	"go.openly.dev/pointy"
 )
 
 type RepositoryPostgres struct {
@@ -181,4 +182,53 @@ func (r *RepositoryPostgres) DropGuest(login string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *RepositoryPostgres) GetWishlist() (ret []model.Wishlist, err error) {
+	stmt := table.Wishlist.
+		SELECT(table.Wishlist.AllColumns).ORDER_BY(table.Wishlist.ID)
+	err = stmt.Query(r.DB, &ret)
+	return
+}
+
+func (r *RepositoryPostgres) NewGift(description string) bool {
+	tmp, err := r.GetWishlist()
+	if err != nil {
+		return false
+	}
+	idx := len(tmp) + 1
+	stmt := table.Wishlist.INSERT(
+		table.Wishlist.ID,
+		table.Wishlist.Description,
+		table.Wishlist.UserID).VALUES(idx, description, 0).ON_CONFLICT().DO_NOTHING()
+	_, err = stmt.Exec(r.DB)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (r *RepositoryPostgres) DropGift(id int32) error {
+	stmt := table.Wishlist.
+		DELETE().WHERE(table.Wishlist.ID.EQ(postgres.Int32(id)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RepositoryPostgres) SetGiftUserID(id int32, user_id int64) (bool, error) {
+	ret, _ := r.GetWishlist()
+	if pointy.PointerValue(ret[id-1].UserID, 0) != 0 &&
+		pointy.PointerValue(ret[id-1].UserID, 0) != user_id && user_id != 0 {
+		return false, nil
+	}
+	stmt := table.Wishlist.UPDATE(table.Wishlist.UserID).SET(user_id).
+		WHERE(table.Wishlist.ID.EQ(postgres.Int32(id)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
