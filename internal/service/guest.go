@@ -1,6 +1,7 @@
 package service
 
 import (
+	"barbot/internal/repository/gen/bot/public/model"
 	"barbot/internal/repository/postgres"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -97,6 +98,48 @@ func (s *Service) handleGuest(update tgbotapi.Update) {
 			s.sendWishlist(update.SentFrom().ID)
 		}
 
+		data := strings.Fields(update.CallbackQuery.Data)
+		idx, err := strconv.Atoi(data[0])
+		if err == nil {
+			err := s.db.NewOrder(update.SentFrom().ID, idx)
+			if err != nil {
+				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с добавлением коктейля в бд "+update.SentFrom().UserName))
+				return
+			}
+			if len(data) < 2 {
+				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Проблемы с парсингом (длина заказа меньше 2) "+update.SentFrom().UserName))
+				return
+			}
+			s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Коктейль \""+data[1]+"\" в работе"))
+			msg := tgbotapi.NewMessage(s.BarmenID, data[1]+" "+strings.Join(data[2:], " "))
+			inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("Готово", strconv.FormatInt(update.SentFrom().ID, 10))))
+			msg.ReplyMarkup = inlineKeyboard
+			s.bots.Bot.Send(msg)
+			return
+		}
+
+		if update.CallbackQuery.Data == "cocktails" {
+			guest, err := s.db.CheckGuest(update.SentFrom().UserName)
+
+			if err != nil {
+				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с запросом на меню "+update.SentFrom().UserName))
+				return
+			}
+			s.sendCocktails(update.SentFrom().ID, *guest.Level, true)
+		}
+
+		if update.CallbackQuery.Data == "soft drinks" {
+			guest, err := s.db.CheckGuest(update.SentFrom().UserName)
+
+			if err != nil {
+				s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "Траблы с запросом на меню "+update.SentFrom().UserName))
+				return
+			}
+			s.sendCocktails(update.SentFrom().ID, *guest.Level, false)
+		}
+
 		return
 	}
 
@@ -119,10 +162,19 @@ func (s *Service) handleGuest(update tgbotapi.Update) {
 			return
 		}
 
+		if pointy.PointerValue(guest.UserID, 0) != 0 {
+			s.sendInfo(update.SentFrom().ID)
+			return
+		}
+
 		s.db.SetID(update.SentFrom().UserName, update.SentFrom().ID)
 		s.bots.Bot.Send(tgbotapi.NewMessage(update.SentFrom().ID, "Привет, "+*guest.Name))
 		s.sendInvite(update.SentFrom().ID)
 		return
+	}
+
+	if command == "menu" {
+		s.sendCocktails(update.SentFrom().ID, 1, false)
 	}
 
 	state, err := s.db.GetState(update.SentFrom().ID)
@@ -225,6 +277,88 @@ func (s *Service) sendWishlist(id int64) {
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 	msg.DisableWebPagePreview = true
 	s.bots.Bot.Send(msg)
+}
+
+func (s *Service) sendCocktails(id int64, level int32, alcohol bool) {
+	FileID, err := s.db.GetMenu(alcohol)
+	if err != nil {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "запроос с меню косячный"+err.Error()))
+		return
+	}
+	photo := tgbotapi.NewPhoto(id, tgbotapi.FileID(FileID))
+	var col1, col2 []model.Cocktails
+	tmp := 0
+	if alcohol {
+		tmp += 2
+	}
+	col1, err = s.db.GetCocktails(tmp)
+	if err != nil {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "запроос с меню косячный"+err.Error()))
+		return
+	}
+	col2, err = s.db.GetCocktails(tmp + 1)
+	if err != nil {
+		s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "запроос с меню косячный"+err.Error()))
+		return
+	}
+	var rows [][]tgbotapi.InlineKeyboardButton
+
+	for i := 0; i < len(col1) || i < len(col2); i++ {
+		var button1, button2 tgbotapi.InlineKeyboardButton
+		if i < len(col1) {
+			button1 = tgbotapi.NewInlineKeyboardButtonData(
+				*col1[i].Name,
+				fmt.Sprintln(col1[i].ID, "    ", *col1[i].Name, "состав", *col1[i].Composition),
+			)
+		} else {
+			button1 = tgbotapi.NewInlineKeyboardButtonData("_", "_")
+		}
+		if i < len(col2) {
+			button2 = tgbotapi.NewInlineKeyboardButtonData(
+				*col2[i].Name,
+				fmt.Sprintln(col2[i].ID, "    ", *col2[i].Name, "состав", *col2[i].Composition),
+			)
+		} else {
+			button2 = tgbotapi.NewInlineKeyboardButtonData("_", "_")
+		}
+
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(button1, button2))
+	}
+	if level == 2 {
+		col, err := s.db.GetCocktails(5)
+		if err != nil {
+			s.bots.Bot.Send(tgbotapi.NewMessage(s.AdminID, "запроос с меню косячный"+err.Error()))
+			return
+		}
+		for i := 0; i < len(col); i++ {
+			button := tgbotapi.NewInlineKeyboardButtonData(
+				*col[i].Name,
+				fmt.Sprintln(col[i].ID, "    ", *col[i].Name, "состав", *col[i].Composition),
+			)
+			rows = append(rows, tgbotapi.NewInlineKeyboardRow(button))
+		}
+	}
+	if alcohol {
+		button := tgbotapi.NewInlineKeyboardButtonData(
+			"antivirus",
+			fmt.Sprintln("5", "     antivirus", "состав", "water / enterosgel"),
+		)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(button))
+	}
+	if level != 0 {
+		name := "cocktails"
+		if alcohol {
+			name = "soft drinks"
+		}
+		button := tgbotapi.NewInlineKeyboardButtonData(
+			name,
+			name,
+		)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(button))
+	}
+
+	photo.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+	s.bots.Bot.Send(photo)
 }
 
 func (s *Service) NewPermission(id int64, permission bool) tgbotapi.PromoteChatMemberConfig {

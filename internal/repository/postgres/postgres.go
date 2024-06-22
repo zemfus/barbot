@@ -4,9 +4,11 @@ import (
 	"barbot/internal/repository/gen/bot/public/model"
 	"barbot/internal/repository/gen/bot/public/table"
 	"database/sql"
+	"errors"
 	"github.com/go-jet/jet/v2/postgres"
 	_ "github.com/lib/pq"
 	"go.openly.dev/pointy"
+	"strconv"
 )
 
 type RepositoryPostgres struct {
@@ -16,74 +18,6 @@ type RepositoryPostgres struct {
 func New(db *sql.DB) *RepositoryPostgres {
 	return &RepositoryPostgres{DB: db}
 }
-
-//func (r *RepositoryPostgres) SaveID(user int64) bool {
-//	stmt := table.Users.INSERT(
-//		table.Users.UserID,
-//		table.Users.State,
-//	).
-//		VALUES(user, 0).ON_CONFLICT().DO_NOTHING()
-//
-//	_, err := stmt.Exec(r.DB)
-//	if err != nil {
-//		return false
-//	}
-//	return true
-//}
-//
-//func (r *RepositoryPostgres) GetUsers() []int64 {
-//	stmt := table.Users.SELECT(
-//		table.Users.UserID,
-//	)
-//	ans := []int64{}
-//	err := stmt.Query(r.DB, &ans)
-//	if err != nil {
-//		return nil
-//	}
-//	return ans
-//}
-//
-//func (r *RepositoryPostgres) GetState(userId int64) int64 {
-//	stmt := table.Users.SELECT(
-//		table.Users.State,
-//	).WHERE(table.Users.UserID.EQ(postgres.Int64(userId)))
-//	var ans model.Users
-//	err := stmt.Query(r.DB, &ans)
-//	if err != nil {
-//		return 0
-//	}
-//	return int64(pointy.Int32Value(ans.State, 0))
-//}
-//
-//func (r *RepositoryPostgres) SetState(userId int64, state int64) {
-//	stmt := table.Users.UPDATE(table.Users.State).SET(state).
-//		WHERE(table.Users.UserID.EQ(postgres.Int64(userId)))
-//	stmt.Exec(r.DB)
-//}
-//
-//func (r *RepositoryPostgres) SetLogin(userId int64, login string) {
-//	stmt := table.Users.UPDATE(table.Users.Login, table.Users.State).SET(login, 1).
-//		WHERE(table.Users.UserID.EQ(postgres.Int64(userId)))
-//	stmt.Exec(r.DB)
-//}
-//
-//func (r *RepositoryPostgres) SaveAnswer(user, questionID int64, answer bool) {
-//	stmt := table.Questions.INSERT(
-//		table.Questions.UserID,
-//		table.Questions.QuestionID,
-//		table.Questions.Answer,
-//	).
-//		VALUES(user, questionID, answer)
-//
-//	stmt.Exec(r.DB)
-//}
-//
-//func (r *RepositoryPostgres) NewUser(login, name string, level int) bool {
-//	// todo
-//	return true
-//}
-
-// --------------------------------------------------------------------------------
 
 const (
 	GuestNone = iota
@@ -101,7 +35,8 @@ func (r *RepositoryPostgres) NewGuest(login, name string, level int) bool {
 		table.Guests.Level,
 		table.Guests.Participation,
 		table.Guests.CheckIn,
-	).VALUES(0, login, name, GuestNone, level, false, false).ON_CONFLICT().DO_NOTHING()
+		table.Guests.Photo,
+	).VALUES(0, login, name, GuestNone, level, false, false, "").ON_CONFLICT().DO_NOTHING()
 
 	_, err := stmt.Exec(r.DB)
 	if err != nil {
@@ -231,4 +166,91 @@ func (r *RepositoryPostgres) SetGiftUserID(id int32, user_id int64) (bool, error
 		return false, err
 	}
 	return true, nil
+}
+
+func (r *RepositoryPostgres) CheckIn(login string, photo string) error {
+	stmt := table.Guests.UPDATE(table.Guests.Photo).SET(photo).
+		WHERE(table.Guests.Login.EQ(postgres.String(login)))
+	_, err := stmt.Exec(r.DB)
+	return err
+}
+
+func (r *RepositoryPostgres) NewCocktail(name string, isBarmen bool, level int) bool {
+	stmt := table.Cocktails.INSERT(
+		table.Cocktails.Name,
+		table.Cocktails.Availability,
+		table.Cocktails.Level,
+		table.Cocktails.Barmen,
+	).VALUES(name, true, level, isBarmen).ON_CONFLICT().DO_NOTHING()
+
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (r *RepositoryPostgres) SetComposition(name string, composition string) bool {
+	stmt := table.Cocktails.UPDATE(table.Cocktails.Composition).SET(composition).
+		WHERE(table.Cocktails.Name.EQ(postgres.String(name)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (r *RepositoryPostgres) DelCocktail(name string) bool {
+	stmt := table.Guests.
+		UPDATE(table.Cocktails.Availability).SET(false).WHERE(table.Cocktails.Name.EQ(postgres.String(name)))
+	_, err := stmt.Exec(r.DB)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (r *RepositoryPostgres) GetCocktails(level int) ([]model.Cocktails, error) {
+	stmt := table.Cocktails.SELECT(
+		table.Cocktails.AllColumns,
+	).WHERE(table.Cocktails.Level.EQ(postgres.Int32(int32(level)))).ORDER_BY(table.Cocktails.Name)
+	var cocktails []model.Cocktails
+	err := stmt.Query(r.DB, &cocktails)
+	if err != nil {
+		return nil, err
+	}
+	return cocktails, nil
+}
+
+func (r *RepositoryPostgres) GetMenu(alcohol bool) (string, error) {
+	stmt := table.Menu.SELECT(
+		table.Menu.AllColumns,
+	).WHERE(table.Menu.Alcohol.EQ(postgres.Bool(alcohol)))
+	var menu []model.Menu
+	err := stmt.Query(r.DB, &menu)
+	if err != nil || len(menu) != 1 {
+		return "", errors.New(err.Error() + "длина" + strconv.Itoa(len(menu)))
+	}
+	return *menu[0].Photo, nil
+}
+
+func (r *RepositoryPostgres) NewOrder(user_id int64, cocktail_id int) error {
+	stmt := table.Orders.INSERT(
+		table.Orders.UserID,
+		table.Orders.CocktailID,
+	).VALUES(user_id, cocktail_id).ON_CONFLICT().DO_NOTHING()
+
+	_, err := stmt.Exec(r.DB)
+	return err
+}
+
+func (r *RepositoryPostgres) GetGuest(id int64) (model.Guests, error) {
+	stmt := table.Guests.SELECT(
+		table.Guests.AllColumns).WHERE(table.Guests.UserID.EQ(postgres.Int64(id)))
+	var ans []model.Guests
+	err := stmt.Query(r.DB, &ans)
+	if err != nil || len(ans) != 1 {
+		return model.Guests{}, err
+	}
+	return ans[0], err
 }

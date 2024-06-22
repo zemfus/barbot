@@ -15,4 +15,5 @@ type Guests struct {
 	Level         *int32
 	Participation *bool
 	CheckIn       *bool
+	Photo         *string
 }

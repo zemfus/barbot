@@ -24,6 +24,7 @@ type guestsTable struct {
 	Level         postgres.ColumnInteger
 	Participation postgres.ColumnBool
 	CheckIn       postgres.ColumnBool
+	Photo         postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -71,8 +72,9 @@ func newGuestsTableImpl(schemaName, tableName, alias string) guestsTable {
 		LevelColumn         = postgres.IntegerColumn("level")
 		ParticipationColumn = postgres.BoolColumn("participation")
 		CheckInColumn       = postgres.BoolColumn("check_in")
-		allColumns          = postgres.ColumnList{UserIDColumn, LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn}
-		mutableColumns      = postgres.ColumnList{UserIDColumn, LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn}
+		PhotoColumn         = postgres.StringColumn("photo")
+		allColumns          = postgres.ColumnList{UserIDColumn, LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn, PhotoColumn}
+		mutableColumns      = postgres.ColumnList{UserIDColumn, LoginColumn, NameColumn, StateColumn, LevelColumn, ParticipationColumn, CheckInColumn, PhotoColumn}
 	)
 
 	return guestsTable{
@@ -86,6 +88,7 @@ func newGuestsTableImpl(schemaName, tableName, alias string) guestsTable {
 		Level:         LevelColumn,
 		Participation: ParticipationColumn,
 		CheckIn:       CheckInColumn,
+		Photo:         PhotoColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

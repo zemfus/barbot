@@ -21,7 +21,7 @@ type cocktailsTable struct {
 	Name         postgres.ColumnString
 	Composition  postgres.ColumnString
 	Availability postgres.ColumnBool
-	Alcohol      postgres.ColumnBool
+	Barmen       postgres.ColumnBool
 	Level        postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
@@ -67,10 +67,10 @@ func newCocktailsTableImpl(schemaName, tableName, alias string) cocktailsTable {
 		NameColumn         = postgres.StringColumn("name")
 		CompositionColumn  = postgres.StringColumn("composition")
 		AvailabilityColumn = postgres.BoolColumn("availability")
-		AlcoholColumn      = postgres.BoolColumn("alcohol")
+		BarmenColumn       = postgres.BoolColumn("barmen")
 		LevelColumn        = postgres.IntegerColumn("level")
-		allColumns         = postgres.ColumnList{IDColumn, NameColumn, CompositionColumn, AvailabilityColumn, AlcoholColumn, LevelColumn}
-		mutableColumns     = postgres.ColumnList{IDColumn, NameColumn, CompositionColumn, AvailabilityColumn, AlcoholColumn, LevelColumn}
+		allColumns         = postgres.ColumnList{IDColumn, NameColumn, CompositionColumn, AvailabilityColumn, BarmenColumn, LevelColumn}
+		mutableColumns     = postgres.ColumnList{NameColumn, CompositionColumn, AvailabilityColumn, BarmenColumn, LevelColumn}
 	)
 
 	return cocktailsTable{
@@ -81,7 +81,7 @@ func newCocktailsTableImpl(schemaName, tableName, alias string) cocktailsTable {
 		Name:         NameColumn,
 		Composition:  CompositionColumn,
 		Availability: AvailabilityColumn,
-		Alcohol:      AlcoholColumn,
+		Barmen:       BarmenColumn,
 		Level:        LevelColumn,
 
 		AllColumns:     allColumns,

@@ -12,5 +12,7 @@ package table
 func UseSchema(schema string) {
 	Cocktails = Cocktails.FromSchema(schema)
 	Guests = Guests.FromSchema(schema)
+	Menu = Menu.FromSchema(schema)
+	Orders = Orders.FromSchema(schema)
 	Wishlist = Wishlist.FromSchema(schema)
 }

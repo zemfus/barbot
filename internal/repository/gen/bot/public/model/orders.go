@@ -7,11 +7,8 @@
 
 package model
 
-type Cocktails struct {
-	ID           int32 `sql:"primary_key"`
-	Name         *string
-	Composition  *string
-	Availability *bool
-	Barmen       *bool
-	Level        *int32
+type Orders struct {
+	ID         int32 `sql:"primary_key"`
+	UserID     *int64
+	CocktailID *int32
 }
