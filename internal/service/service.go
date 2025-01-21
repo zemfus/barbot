@@ -56,7 +56,20 @@ func (s *Service) Run() {
 
 func (s *Service) processUpdate(update tgbotapi.Update) {
 
-	if update.Message != nil && update.Message.Command() == "start" {
+	if update.Message != nil && update.Message.Command() == "start" && (s.AdminId[1] != update.SentFrom().ID && s.AdminId[0] != update.SentFrom().ID) {
+		s.needRegistration(update)
+		m := tgbotapi.NewMessage(update.Message.From.ID, "Поздравляю, ты успешно зарегестрировался, жди дальнейших указаний!")
+		s.bots.Bot.Send(m)
+		return
+	}
+
+	if update.Message != nil && update.Message.Command() == "start" && (s.AdminId[1] == update.SentFrom().ID || s.AdminId[0] == update.SentFrom().ID) {
+		m := tgbotapi.NewMessage(update.Message.From.ID, "Пук Пук, я жив\n /new - распределить\n/count - посчитать людей \n Принять участие в распределении - /start_admin")
+		s.bots.Bot.Send(m)
+		return
+	}
+
+	if update.Message != nil && update.Message.Command() == "start_admin" && (s.AdminId[1] == update.SentFrom().ID || s.AdminId[0] == update.SentFrom().ID) {
 		s.needRegistration(update)
 		m := tgbotapi.NewMessage(update.Message.From.ID, "Поздравляю, ты успешно зарегестрировался, жди дальнейших указаний!")
 		s.bots.Bot.Send(m)
