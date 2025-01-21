@@ -58,7 +58,7 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 
 	if update.Message != nil && update.Message.Command() == "start" {
 		s.needRegistration(update)
-		m := tgbotapi.NewMessage(update.Message.From.ID, "Поздравляю, ты в игре, жди дальнейших указаний!")
+		m := tgbotapi.NewMessage(update.Message.From.ID, "Поздравляю, ты успешно зарегестрировался, жди дальнейших указаний!")
 		s.bots.Bot.Send(m)
 		return
 	}
@@ -67,7 +67,7 @@ func (s *Service) processUpdate(update tgbotapi.Update) {
 		users := s.db.GetUsers()
 		teamAssignments := distributeTeams(users)
 		for id, team := range teamAssignments {
-			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда Аксолотлей номер: %d ❤️️", team))
+			m1 := tgbotapi.NewMessage(id, fmt.Sprintf("Твоя команда Утконосов номер: %d ❤️️", team))
 			s.bots.Bot.Send(m1)
 		}
 		return
@@ -95,8 +95,8 @@ func (s *Service) needRegistration(update tgbotapi.Update) {
 }
 
 func shuffle(slice []int64) {
-	rand.New(rand.NewSource(time.Now().UnixMilli()))
-	rand.Shuffle(len(slice), func(i, j int) {
+	r := rand.New(rand.NewSource(time.Now().UnixMilli()))
+	r.Shuffle(len(slice), func(i, j int) {
 		slice[i], slice[j] = slice[j], slice[i]
 	})
 }
@@ -119,7 +119,7 @@ func distributeTeams(members []int64) map[int64]int64 {
 	}
 
 	// Обработка неполных команд
-	if membersInCurrentTeam > 0 && membersInCurrentTeam < 4 && membersInCurrentTeam < currentTeam {
+	if membersInCurrentTeam > 0 && membersInCurrentTeam < 4 {
 		// Перераспределение участников из последней неполной команды
 		for member, team := range teamAssignments {
 			if team == currentTeam {
